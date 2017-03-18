@@ -1,5 +1,6 @@
 require "kiwiland/version"
+require "kiwiland/graph"
 
 module Kiwiland
-  # Your code goes here...
+  NoRouteExists = Object.new
 end
