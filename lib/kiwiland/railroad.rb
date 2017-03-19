@@ -1,5 +1,21 @@
 module Kiwiland
   class Railroad
+    class NoFilterSupplied < ArgumentError
+      def message
+        "No filter supplied, use one of `max_stops`, `exact_stops` or `max_distance`."
+      end
+    end
+
+    class TooManyFiltersSupplied < ArgumentError
+      def initialize(filters)
+        @filters = filters
+      end
+
+      def message
+        "Too many filters supplied: #{@filters.join(", ")}."
+      end
+    end
+
     def initialize
       @graph = Hash.new { |h, k| h[k] = {} }
     end
@@ -28,61 +44,34 @@ module Kiwiland
       end
     end
 
-    # Calculate the number of routes betwen two towns with a given number of
-    # stops.
+    # Calculate the number of routes between two towns with a given filtering
+    # criteria.
     #
     # @param source [String] the source town
     # @param terminal [String] the terminal town
     # @param exact_stops [Integer, nil] the expect number of stops
-    # @param max_stops [Integer] the maximum number of stops - defaults to
-    #   `exact_stops`
-    # @return [Integer] the number of routes between two towns
-    def number_of_routes(source:, terminal:, exact_stops: nil, max_stops: exact_stops, depth: 0)
-      return 0 if depth > max_stops
-      if exact_stops
-        return 1 if source == terminal && depth > 0 && depth == max_stops
-      else
-        return 1 if source == terminal && depth > 0
-      end
-
-      @graph[source].keys.reduce(0) do |count, town|
-        count + number_of_routes(
-          source: town,
-          terminal: terminal,
-          max_stops: max_stops,
-          exact_stops: exact_stops,
-          depth: depth + 1,
-        )
-      end
-    end
-
-    # Calculate the number of routes within a specified distance between two
-    # towns.
-    #
-    # @param source [String] the source town
-    # @param terminal [String] the terminal town
+    # @param max_stops [Integer] the maximum number of stops
     # @param max_distance [Integer] the maximum distance to travel between
     #   source and terminal
-    # @param current_distance [Integer] the current accumlative distance between
-    #   source and terminal
-    # @return [Integer] the number of routes within a specified distance
-    def number_of_routes_within(source:, terminal:, max_distance:, current_distance: 0)
-      return 0 if current_distance >= max_distance
+    # @return [Integer] the number of routes between two towns
+    def count_routes(source:, terminal:, exact_stops: nil, max_stops: nil, max_distance: nil)
+      options = {
+        max_stops: max_stops,
+        exact_stops: exact_stops,
+        max_distance: max_distance
+      }.compact
 
-      @graph[source].reduce(0) do |count, (town, distance)|
-        new_distance = current_distance + distance
+      raise NoFilterSupplied if options.empty?
+      raise TooManyFiltersSupplied, options.keys if options.keys.count > 1
 
-        if town == terminal && current_distance > 0 && new_distance < max_distance
-          count += 1
-        end
+      option, value = options.first
 
-        count + number_of_routes_within(
-          source: town,
-          terminal: terminal,
-          max_distance: max_distance,
-          current_distance: new_distance
-        )
-      end
+      send(
+        "count_routes_with_#{option}",
+        source: source,
+        terminal: terminal,
+        option => value,
+      )
     end
 
     # Calculate the shortest distance between two towns.
@@ -95,6 +84,55 @@ module Kiwiland
     # @return [Integer] the shortest distance between source and terminal
     def shortest_distance_between(source:, terminal:)
       9
+    end
+
+    private
+
+    def count_routes_with_max_stops(source:, terminal:, max_stops:, depth: 0)
+      return 0 if depth > max_stops
+      return 1 if source == terminal && depth > 0
+
+      @graph[source].keys.reduce(0) do |count, town|
+        count + count_routes_with_max_stops(
+          source: town,
+          terminal: terminal,
+          max_stops: max_stops,
+          depth: depth + 1,
+        )
+      end
+    end
+
+    def count_routes_with_exact_stops(source:, terminal:, exact_stops: nil, depth: 0)
+      return 0 if depth > exact_stops
+      return 1 if source == terminal && depth > 0 && depth == exact_stops
+
+      @graph[source].keys.reduce(0) do |count, town|
+        count + count_routes_with_exact_stops(
+          source: town,
+          terminal: terminal,
+          exact_stops: exact_stops,
+          depth: depth + 1,
+        )
+      end
+    end
+
+    def count_routes_with_max_distance(source:, terminal:, max_distance:, current_distance: 0)
+      return 0 if current_distance >= max_distance
+
+      @graph[source].reduce(0) do |count, (town, distance)|
+        new_distance = current_distance + distance
+
+        if town == terminal && current_distance > 0 && new_distance < max_distance
+          count += 1
+        end
+
+        count + count_routes_with_max_distance(
+          source: town,
+          terminal: terminal,
+          max_distance: max_distance,
+          current_distance: new_distance
+        )
+      end
     end
   end
 end

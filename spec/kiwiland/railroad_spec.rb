@@ -27,16 +27,51 @@ module Kiwiland
       end
     end
 
-    describe "#number_of_routes" do
-      it "counts the number of routes between two towns" do
-        expect(railroad.number_of_routes(source: "C", terminal: "C", max_stops: 3)).to eq(2)
-        expect(railroad.number_of_routes(source: "A", terminal: "C", exact_stops: 4)).to eq(3)
+    describe "#count_routes" do
+      it "raises an exception when no filter is supplied" do
+        expect { railroad.count_routes(source: "C", terminal: "C") }
+          .to raise_error(Railroad::NoFilterSupplied)
       end
-    end
 
-    describe "#number_of_routes_within" do
-      it "counts the number of routes within a specified distance" do
-        expect(railroad.number_of_routes_within(source: "C", terminal: "C", max_distance: 30)).to eq(7)
+      it "raises an exception when too many filters are supplied" do
+        expect do
+          railroad.count_routes(
+            source: "C",
+            terminal: "C",
+            max_stops: 10,
+            exact_stops: 2,
+          )
+        end.to raise_error(Railroad::TooManyFiltersSupplied)
+      end
+
+      it "counts the number of routes between two routes given max_stops" do
+        count = railroad.count_routes(
+          source: "C",
+          terminal: "C",
+          max_stops: 3,
+        )
+
+        expect(count).to eq(2)
+      end
+
+      it "counts the number of routes between two routes given exact_stops" do
+        count = railroad.count_routes(
+          source: "A",
+          terminal: "C",
+          exact_stops: 4,
+        )
+
+        expect(count).to eq(3)
+      end
+
+      it "counts the number of routes between two routes given max_distance" do
+        count = railroad.count_routes(
+          source: "C",
+          terminal: "C",
+          max_distance: 30,
+        )
+
+        expect(count).to eq(7)
       end
     end
 
