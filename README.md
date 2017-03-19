@@ -1,5 +1,7 @@
 # Kiwiland
 
+[![Build Status](https://travis-ci.org/coop/kiwiland.svg?branch=master)](https://travis-ci.org/coop/kiwiland)
+
 The local commuter railroad services a number of towns in Kiwiland.  Because of
 monetary concerns, all of the tracks are 'one-way’. That is, a route from
 Kaitaia to Invercargill does not imply the existence of a route from
