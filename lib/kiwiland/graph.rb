@@ -23,7 +23,7 @@ module Kiwiland
         if (weight = @graph[current_node][next_node])
           acc + weight
         else
-          return NoRouteExists
+          "NO SUCH ROUTE"
         end
       end
     end

@@ -23,7 +23,7 @@ module Kiwiland
         expect(graph.distance_between("A", "D")).to eq(5)
         expect(graph.distance_between("A", "D", "C")).to eq(13)
         expect(graph.distance_between("A", "E", "B", "C", "D")).to eq(22)
-        expect(graph.distance_between("A", "E", "D")).to eq(NoRouteExists)
+        expect(graph.distance_between("A", "E", "D")).to eq("NO SUCH ROUTE")
       end
     end
 
