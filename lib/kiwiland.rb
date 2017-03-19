@@ -1,5 +1,5 @@
 require "kiwiland/version"
-require "kiwiland/graph"
+require "kiwiland/railroad"
 
 module Kiwiland
 end

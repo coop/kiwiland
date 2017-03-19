@@ -4,7 +4,10 @@ module Kiwiland
   class CLI < Thor
     package_name "kiwiland"
 
-    class_option :graph, type: :string, required: true, default: "AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7"
+    class_option :railroad,
+      type: :string,
+      required: true,
+      default: "AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7"
 
     def self.exit_on_failure?
       true
@@ -18,8 +21,8 @@ module Kiwiland
     end
 
     desc "route-distance [SOURCE] [TERMINAL]", "Calculate the distance between two towns"
-    def route_distance(*nodes)
-      say graph.distance_between(*nodes)
+    def route_distance(*towns)
+      say railroad.distance_between(*towns)
     end
 
     desc "route-count [SOURCE] [TERMINAL]", "Calculate the number of routes between two towns"
@@ -30,14 +33,14 @@ module Kiwiland
       if correct_number_of_options_for_route_count?(options)
         result =
           if options["max-distance"]
-            graph.number_of_routes_within(
+            railroad.number_of_routes_within(
               source: source,
               terminal: terminal,
               max_distance: options["max-distance"],
             )
           else
             exact_stops = options["exact-stops"]
-            graph.number_of_trips(
+            railroad.number_of_routes(
               source: source,
               terminal: terminal,
               exact_stops: options["exact-stops"],
@@ -51,18 +54,23 @@ module Kiwiland
       end
     end
 
-    desc "shortest-distance [SOURCE] [TERMINAL]", "Calculate the shortest route between two towns"
+    desc "shortest-distance [SOURCE] [TERMINAL]", "Calculate the shortest distance between two towns"
     def shortest_distance(source, terminal)
-      say graph.shortest_route(source: source, terminal: terminal)
+      say railroad.shortest_distance_between(source: source, terminal: terminal)
     end
 
     no_commands do
-      def graph
-        graph = Graph.new
-        options[:graph].gsub(/\s/, "").scan(/(\w)(\w)(\d)/).each do |source, terminal, weight|
-          graph.add_edge(source: source, terminal: terminal, weight: weight.to_i)
+      def railroad
+        tracks = options[:railroad].gsub(/\s/, "").scan(/(\w)(\w)(\d)/)
+        railroad = Railroad.new
+        tracks.each do |source, terminal, distance|
+          railroad.add_track(
+            source: source,
+            terminal: terminal,
+            distance: distance.to_i,
+          )
         end
-        graph
+        railroad
       end
 
       # At this stage counting the number of routes is "dumb" and doesn't
@@ -71,7 +79,7 @@ module Kiwiland
       # - find the number of routes with a max distance of 30 and max stops 3
       # - find the number of routes with exactly 3 stops and a max distance of 9
       #
-      # `graph` is a required option and we expect exactly 1 other option
+      # `railroad` is a required option and we expect exactly 1 other option
       # otherwise the request is invalid.
       def correct_number_of_options_for_route_count?(options)
         options.keys.length == 2
